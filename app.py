@@ -64,8 +64,13 @@ def detectar_rostro(imagen):
     else:
         imagen_gris = imagen
     
-    # Detectar rostros
-    rostros = face_cascade.detectMultiScale(imagen_gris, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
+    # Detectar rostros (más flexible: scaleFactor más bajo, minNeighbors más bajo)
+    rostros = face_cascade.detectMultiScale(
+        imagen_gris, 
+        scaleFactor=1.05,  # Menor = más sensible
+        minNeighbors=3,    # Menor = más detecciones (aunque puede haber falsos positivos)
+        minSize=(30, 30)
+    )
     
     if len(rostros) > 0:
         # Tomar el primer rostro
@@ -135,33 +140,40 @@ if opcion == "Subir una imagen 📷":
         
         with col2:
             st.subheader("Resultado")
-            # Detectar rostro
-            rostro, coordenadas = detectar_rostro(imagen_array)
             
-            if rostro is not None:
-                # Predecir emoción
-                emocion, probabilidades = predecir_emocion(rostro)
-                
-                if emocion is not None:
-                    # Emoji por emoción
-                    emojis = {
-                        'angry': '😠',
-                        'fear': '😨',
-                        'happy': '😊',
-                        'sad': '😢',
-                        'surprise': '😮',
-                        'neutral': '😐',
-                        'disgust': '🤢'
-                    }
-                    
-                    st.success(f"🎯 Emoción detectada: **{emocion.upper()}** {emojis.get(emocion, '')}")
-                    
-                    # Mostrar gráfico
-                    st.subheader("Probabilidades detalladas")
-                    fig = mostrar_grafico_probabilidades(probabilidades)
-                    st.pyplot(fig)
+            # Primero, verificamos si el modelo está cargado
+            if modelo is None:
+                st.error("❌ No hay modelo cargado! Asegúrate de que 'mejor_modelo.keras' esté en el directorio.")
             else:
-                st.warning("⚠️ No se detectó ningún rostro en la imagen. Intenta con otra foto!")
+                # Detectar rostro
+                rostro, coordenadas = detectar_rostro(imagen_array)
+                
+                if rostro is not None:
+                    st.info("✅ Rostro detectado! Analizando...")
+                    
+                    # Predecir emoción
+                    emocion, probabilidades = predecir_emocion(rostro)
+                    
+                    if emocion is not None:
+                        # Emoji por emoción
+                        emojis = {
+                            'angry': '😠',
+                            'disgust': '🤢',
+                            'fear': '😨',
+                            'happy': '😊',
+                            'neutral': '😐',
+                            'sad': '😢',
+                            'surprise': '😮'
+                        }
+                        
+                        st.success(f"🎯 Emoción detectada: **{emocion.upper()}** {emojis.get(emocion, '')}")
+                        
+                        # Mostrar gráfico
+                        st.subheader("Probabilidades detalladas")
+                        fig = mostrar_grafico_probabilidades(probabilidades)
+                        st.pyplot(fig)
+                else:
+                    st.warning("⚠️ No se detectó ningún rostro en la imagen. Intenta con otra foto donde el rostro esté bien iluminado y centrado!")
 
 elif opcion == "Usar Cámara Web 🎥":
     st.header("🎥 Usar Cámara Web")
@@ -181,33 +193,40 @@ elif opcion == "Usar Cámara Web 🎥":
         
         with col2:
             st.subheader("Resultado")
-            # Detectar rostro
-            rostro, coordenadas = detectar_rostro(imagen_array)
             
-            if rostro is not None:
-                # Predecir emoción
-                emocion, probabilidades = predecir_emocion(rostro)
-                
-                if emocion is not None:
-                    # Emoji por emoción
-                    emojis = {
-                        'angry': '😠',
-                        'fear': '😨',
-                        'happy': '😊',
-                        'sad': '😢',
-                        'surprise': '😮',
-                        'neutral': '😐',
-                        'disgust': '🤢'
-                    }
-                    
-                    st.success(f"🎯 Emoción detectada: **{emocion.upper()}** {emojis.get(emocion, '')}")
-                    
-                    # Mostrar gráfico
-                    st.subheader("Probabilidades detalladas")
-                    fig = mostrar_grafico_probabilidades(probabilidades)
-                    st.pyplot(fig)
+            # Primero, verificamos si el modelo está cargado
+            if modelo is None:
+                st.error("❌ No hay modelo cargado! Asegúrate de que 'mejor_modelo.keras' esté en el directorio.")
             else:
-                st.warning("⚠️ No se detectó ningún rostro en la foto. Intenta nuevamente!")
+                # Detectar rostro
+                rostro, coordenadas = detectar_rostro(imagen_array)
+                
+                if rostro is not None:
+                    st.info("✅ Rostro detectado! Analizando...")
+                    
+                    # Predecir emoción
+                    emocion, probabilidades = predecir_emocion(rostro)
+                    
+                    if emocion is not None:
+                        # Emoji por emoción
+                        emojis = {
+                            'angry': '😠',
+                            'disgust': '🤢',
+                            'fear': '😨',
+                            'happy': '😊',
+                            'neutral': '😐',
+                            'sad': '😢',
+                            'surprise': '😮'
+                        }
+                        
+                        st.success(f"🎯 Emoción detectada: **{emocion.upper()}** {emojis.get(emocion, '')}")
+                        
+                        # Mostrar gráfico
+                        st.subheader("Probabilidades detalladas")
+                        fig = mostrar_grafico_probabilidades(probabilidades)
+                        st.pyplot(fig)
+                else:
+                    st.warning("⚠️ No se detectó ningún rostro en la foto. Intenta nuevamente con buena iluminación!")
 
 # Pie de página
 st.markdown("---")
