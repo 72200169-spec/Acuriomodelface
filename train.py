@@ -9,7 +9,7 @@ import os
 # Configuración de parámetros
 IMG_SIZE = 48
 BATCH_SIZE = 32
-EPOCHS = 3  # Reducido para que termine más rápido
+EPOCHS = 1  # ¡Solo 1 época para entrenamiento ultra rápido!
 DATA_DIR_TRAIN = 'train'
 DATA_DIR_TEST = 'test'
 
@@ -52,15 +52,13 @@ num_classes = len(train_generator.class_indices)
 emociones = list(train_generator.class_indices.keys())
 print(f"✅ Clases detectadas: {emociones}")
 
-# Paso 2: Definir arquitectura CNN MUY simple y ligera
-print("🧠 Construyendo modelo CNN simple...")
+# Paso 2: Definir modelo SUPER simple y LIGERO (para que se suba a GitHub sin problemas)
+print("🧠 Construyendo modelo CNN MUY simple y ligero...")
 model = Sequential([
-    Conv2D(32, (3, 3), activation='relu', input_shape=(IMG_SIZE, IMG_SIZE, 1)),
-    MaxPooling2D((2, 2)),
-    Conv2D(64, (3, 3), activation='relu'),
+    Conv2D(16, (3, 3), activation='relu', input_shape=(IMG_SIZE, IMG_SIZE, 1)),
     MaxPooling2D((2, 2)),
     Flatten(),
-    Dense(128, activation='relu'),
+    Dense(32, activation='relu'),
     Dense(num_classes, activation='softmax')
 ])
 
