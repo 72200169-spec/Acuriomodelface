@@ -52,25 +52,15 @@ num_classes = len(train_generator.class_indices)
 emociones = list(train_generator.class_indices.keys())
 print(f"✅ Clases detectadas: {emociones}")
 
-# Paso 2: Definir arquitectura CNN moderna (simplificada para entrenamiento rápido)
-print("🧠 Construyendo modelo CNN...")
+# Paso 2: Definir arquitectura CNN MUY simple y ligera
+print("🧠 Construyendo modelo CNN simple...")
 model = Sequential([
-    # Bloque 1
-    Conv2D(32, (3, 3), activation='relu', padding='same', input_shape=(IMG_SIZE, IMG_SIZE, 1)),
+    Conv2D(32, (3, 3), activation='relu', input_shape=(IMG_SIZE, IMG_SIZE, 1)),
     MaxPooling2D((2, 2)),
-    
-    # Bloque 2
-    Conv2D(64, (3, 3), activation='relu', padding='same'),
+    Conv2D(64, (3, 3), activation='relu'),
     MaxPooling2D((2, 2)),
-    
-    # Bloque 3
-    Conv2D(128, (3, 3), activation='relu', padding='same'),
-    MaxPooling2D((2, 2)),
-    
-    # Bloque completamente conectado
     Flatten(),
-    Dense(256, activation='relu'),
-    Dropout(0.5),
+    Dense(128, activation='relu'),
     Dense(num_classes, activation='softmax')
 ])
 
