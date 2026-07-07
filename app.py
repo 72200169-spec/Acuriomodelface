@@ -21,10 +21,12 @@ st.markdown("---")
 @st.cache_resource
 def cargar_modelo():
     try:
+        # Intentar cargar el modelo desde el directorio actual
         modelo = load_model('mejor_modelo.keras')
         return modelo
-    except:
-        st.error("❌ No se encontró el modelo 'mejor_modelo.keras'. Primero entrena el modelo con train.py!")
+    except Exception as e:
+        st.error(f"❌ Error al cargar el modelo: {str(e)}")
+        st.info("Primero entrena el modelo con train.py o asegúrate de que 'mejor_modelo.keras' esté en el mismo directorio!")
         return None
 
 # Lista de emociones (en orden alfabético, como lo usa ImageDataGenerator)
@@ -129,7 +131,7 @@ if opcion == "Subir una imagen 📷":
         
         with col1:
             st.subheader("Imagen original")
-            st.image(imagen, use_container_width=True)
+            st.image(imagen, width=400)
         
         with col2:
             st.subheader("Resultado")
@@ -175,7 +177,7 @@ elif opcion == "Usar Cámara Web 🎥":
         
         with col1:
             st.subheader("Foto capturada")
-            st.image(imagen, use_container_width=True)
+            st.image(imagen, width=400)
         
         with col2:
             st.subheader("Resultado")
