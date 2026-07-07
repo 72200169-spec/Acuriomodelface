@@ -1,0 +1,26 @@
+# Entorno virtual
+venv/
+env/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Archivos de Python
+*.pyc
+__pycache__/
+
+# Archivos generados
+*.log
+*.h5
+*.keras
+*.png
+grafico_entrenamiento.png
+
+# Datos de entrenamiento (no subir, son muchos archivos)
+train/
+test/
+
+# IDE
+.vscode/
+.idea/
