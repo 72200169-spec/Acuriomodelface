@@ -20,14 +20,27 @@ st.markdown("---")
 # Cargar el modelo y definir variables globales
 @st.cache_resource
 def cargar_modelo():
-    try:
-        # Intentar cargar el modelo desde el directorio actual
-        modelo = load_model('mejor_modelo.keras')
-        return modelo
-    except Exception as e:
-        st.error(f"❌ Error al cargar el modelo: {str(e)}")
-        st.info("Primero entrena el modelo con train.py o asegúrate de que 'mejor_modelo.keras' esté en el mismo directorio!")
-        return None
+    # Lista de rutas para buscar el modelo
+    rutas_modelo = [
+        'mejor_modelo.keras',
+        './mejor_modelo.keras',
+        '/mount/src/acuriomodelface/mejor_modelo.keras'
+    ]
+    
+    for ruta in rutas_modelo:
+        try:
+            st.info(f"Intentando cargar modelo desde: {ruta}")
+            modelo = load_model(ruta)
+            st.success(f"✅ Modelo cargado exitosamente desde: {ruta}")
+            return modelo
+        except Exception as e:
+            st.warning(f"No se pudo cargar desde {ruta}: {str(e)}")
+            continue
+    
+    # Si ninguna ruta funcionó
+    st.error("❌ No se encontró el modelo en ninguna de las rutas!")
+    st.info("Asegúrate de que 'mejor_modelo.keras' esté en el directorio raíz del repositorio.")
+    return None
 
 # Lista de emociones (en orden alfabético, como lo usa ImageDataGenerator)
 EMOCIONES = ['angry', 'disgust', 'fear', 'happy', 'neutral', 'sad', 'surprise']
