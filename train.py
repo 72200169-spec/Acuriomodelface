@@ -9,7 +9,7 @@ import os
 # Configuración de parámetros
 IMG_SIZE = 48
 BATCH_SIZE = 32
-EPOCHS = 10
+EPOCHS = 3  # Reducido para que termine más rápido
 DATA_DIR_TRAIN = 'train'
 DATA_DIR_TEST = 'test'
 
