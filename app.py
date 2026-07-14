@@ -6,6 +6,7 @@ import numpy as np
 from PIL import Image
 import mediapipe as mp
 import math
+import os
 
 # Configuración de la página
 st.set_page_config(
@@ -21,18 +22,29 @@ st.markdown("---")
 # Cargar el modelo de emociones
 @st.cache_resource
 def cargar_modelo():
+    # Lista de rutas para buscar el modelo
     rutas_modelo = [
         'mejor_modelo.keras',
         './mejor_modelo.keras',
         '/mount/src/acuriomodelface/mejor_modelo.keras'
     ]
+    
     for ruta in rutas_modelo:
         try:
-            modelo = load_model(ruta)
-            return modelo
+            st.info(f"🔍 Buscando modelo en: {ruta}")
+            if os.path.exists(ruta):
+                st.info(f"✅ Encontrado el modelo en: {ruta}")
+                modelo = load_model(ruta)
+                return modelo
+            else:
+                st.warning(f"⚠️ No existe el archivo en: {ruta}")
         except Exception as e:
+            st.error(f"❌ Error al cargar modelo desde {ruta}: {e}")
             continue
-    st.error("❌ No se encontró el modelo!")
+    
+    # Si ninguna ruta funcionó
+    st.error("❌ No se encontró el modelo en ninguna de las rutas!")
+    st.info(f"📂 Archivos en el directorio actual: {os.listdir('.')}")
     return None
 
 # Constantes y datos
