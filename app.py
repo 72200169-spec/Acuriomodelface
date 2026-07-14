@@ -183,7 +183,7 @@ if modo == "Modo Filósofo Emocional 😊":
         col1, col2 = st.columns(2)
         
         with col1:
-            st.image(img_pil, caption="Tu foto", use_container_width=True)
+            st.image(img_pil, caption="Tu foto", width=400)
         
         with col2:
             if modelo is None:
@@ -221,7 +221,7 @@ elif modo == "Modo Gestos 👋":
         col1, col2 = st.columns(2)
         
         with col1:
-            st.image(img_pil, caption="Tu mano", use_container_width=True)
+            st.image(img_pil, caption="Tu mano", width=400)
         
         with col2:
             with mp_hands.Hands(static_image_mode=True, max_num_hands=2, min_detection_confidence=0.5) as hands:
