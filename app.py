@@ -4,243 +4,247 @@ from tensorflow.keras.models import load_model
 import cv2
 import numpy as np
 from PIL import Image
-import matplotlib.pyplot as plt
+import mediapipe as mp
+import math
 
 # Configuración de la página
 st.set_page_config(
-    page_title="Reconocimiento de Expresiones Faciales 😊",
-    page_icon="🎭",
+    page_title="El Filósofo Virtual 🧠",
+    page_icon="📜",
     layout="wide"
 )
 
 # Título principal
-st.title("🎭 Reconocimiento de Expresiones Faciales")
+st.title("📜 El Filósofo Virtual")
 st.markdown("---")
 
-# Cargar el modelo y definir variables globales
+# Cargar el modelo de emociones
 @st.cache_resource
 def cargar_modelo():
-    # Lista de rutas para buscar el modelo
     rutas_modelo = [
         'mejor_modelo.keras',
         './mejor_modelo.keras',
         '/mount/src/acuriomodelface/mejor_modelo.keras'
     ]
-    
     for ruta in rutas_modelo:
         try:
-            st.info(f"Intentando cargar modelo desde: {ruta}")
             modelo = load_model(ruta)
-            st.success(f"✅ Modelo cargado exitosamente desde: {ruta}")
             return modelo
         except Exception as e:
-            st.warning(f"No se pudo cargar desde {ruta}: {str(e)}")
             continue
-    
-    # Si ninguna ruta funcionó
-    st.error("❌ No se encontró el modelo en ninguna de las rutas!")
-    st.info("Asegúrate de que 'mejor_modelo.keras' esté en el directorio raíz del repositorio.")
+    st.error("❌ No se encontró el modelo!")
     return None
 
-# Lista de emociones (en orden alfabético, como lo usa ImageDataGenerator)
+# Constantes y datos
 EMOCIONES = ['angry', 'disgust', 'fear', 'happy', 'neutral', 'sad', 'surprise']
+EMOCIONES_ES = {
+    'angry': 'Enojo',
+    'disgust': 'Disgusto', 
+    'fear': 'Miedo',
+    'happy': 'Alegría',
+    'neutral': 'Neutral',
+    'sad': 'Tristeza',
+    'surprise': 'Sorpresa'
+}
 IMG_SIZE = 48
+
+# Citas filosóficas por emoción
+CITAS_FILOSOFICAS = {
+    'angry': [
+        {"filosofo": "Aristóteles", "cita": "Cualquiera puede enojarse — eso es fácil. Pero enojarse con la persona correcta, en el grado correcto, en el momento correcto, por el motivo correcto y de la manera correcta, eso no es fácil."},
+        {"filosofo": "Nietzsche", "cita": "Resentimiento es la venganza del débil."}
+    ],
+    'fear': [
+        {"filosofo": "Sartre", "cita": "La libertad es lo que haces de lo que se ha hecho de ti."},
+        {"filosofo": "Kant", "cita": "Sapere aude! ¡Atreve a saber!"}
+    ],
+    'happy': [
+        {"filosofo": "Aristóteles", "cita": "La felicidad es el significado y el propósito de la vida, el objetivo y el fin de la existencia humana."},
+        {"filosofo": "Nietzsche", "cita": "¡Caminemos por nuestro propio camino!"}
+    ],
+    'sad': [
+        {"filosofo": "Sartre", "cita": "La existencia precede a la esencia."},
+        {"filosofo": "Aristóteles", "cita": "El hombre es un ser social."}
+    ],
+    'surprise': [
+        {"filosofo": "Nietzsche", "cita": "¡Qué importan los momentos! ¡La vida es un ritmo, una danza, una fiesta!"},
+        {"filosofo": "Kant", "cita": "La curiosidad es el motor del pensamiento."}
+    ],
+    'neutral': [
+        {"filosofo": "Kant", "cita": "No hagas a los demás lo que no quieres que te hagan a ti."},
+        {"filosofo": "Sartre", "cita": "Estamos condenados a ser libres."}
+    ],
+    'disgust': [
+        {"filosofo": "Aristóteles", "cita": "La virtud es un término medio entre dos vicios."}
+    ]
+}
 
 # Cargar modelo
 modelo = cargar_modelo()
 
-# Función para preprocesar la imagen
+# --- Funciones auxiliares ---
+
+# 1. Emociones
 def preprocesar_imagen(imagen):
-    # Convertir a escala de grises
     if len(imagen.shape) == 3:
         imagen_gris = cv2.cvtColor(imagen, cv2.COLOR_BGR2GRAY)
     else:
         imagen_gris = imagen
-    
-    # Redimensionar a 48x48
     imagen_redimensionada = cv2.resize(imagen_gris, (IMG_SIZE, IMG_SIZE))
-    
-    # Normalizar y dar forma para el modelo
     imagen_normalizada = imagen_redimensionada / 255.0
-    imagen_final = imagen_normalizada.reshape(1, IMG_SIZE, IMG_SIZE, 1)
-    
-    return imagen_final
+    return imagen_normalizada.reshape(1, IMG_SIZE, IMG_SIZE, 1)
 
-# Función para detectar rostro con OpenCV
 def detectar_rostro(imagen):
-    # Cargar el clasificador de rostros de OpenCV
     face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
-    
-    # Convertir a escala de grises
     if len(imagen.shape) == 3:
         imagen_gris = cv2.cvtColor(imagen, cv2.COLOR_BGR2GRAY)
     else:
         imagen_gris = imagen
-    
-    # Detectar rostros (más flexible: scaleFactor más bajo, minNeighbors más bajo)
-    rostros = face_cascade.detectMultiScale(
-        imagen_gris, 
-        scaleFactor=1.05,  # Menor = más sensible
-        minNeighbors=3,    # Menor = más detecciones (aunque puede haber falsos positivos)
-        minSize=(30, 30)
-    )
-    
+    rostros = face_cascade.detectMultiScale(imagen_gris, scaleFactor=1.05, minNeighbors=3, minSize=(30, 30))
     if len(rostros) > 0:
-        # Tomar el primer rostro
         (x, y, w, h) = rostros[0]
-        rostro_recortado = imagen_gris[y:y+h, x:x+w]
-        return rostro_recortado, (x, y, w, h)
-    else:
-        return None, None
+        return imagen_gris[y:y+h, x:x+w], (x, y, w, h)
+    return None, None
 
-# Función para hacer la predicción
 def predecir_emocion(imagen):
     if modelo is None:
         return None, None
-    
-    imagen_procesada = preprocesar_imagen(imagen)
-    prediccion = modelo.predict(imagen_procesada, verbose=0)[0]
-    emocion_predicha = EMOCIONES[np.argmax(prediccion)]
-    probabilidades = {EMOCIONES[i]: float(prediccion[i]) for i in range(len(EMOCIONES))}
-    
-    return emocion_predicha, probabilidades
+    img_procesada = preprocesar_imagen(imagen)
+    pred = modelo.predict(img_procesada, verbose=0)[0]
+    return EMOCIONES[np.argmax(pred)], {EMOCIONES[i]: float(pred[i]) for i in range(len(EMOCIONES))}
 
-# Función para mostrar gráfico de barras
-def mostrar_grafico_probabilidades(probabilidades):
-    fig, ax = plt.subplots(figsize=(10, 5))
-    emociones_lista = list(probabilidades.keys())
-    valores = list(probabilidades.values())
-    
-    # Colores bonitos
-    colores = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8', '#F7DC6F', '#BB8FCE']
-    
-    ax.bar(emociones_lista, valores, color=colores)
-    ax.set_title('📊 Probabilidades de cada emoción', fontsize=14)
-    ax.set_xlabel('Emoción', fontsize=12)
-    ax.set_ylabel('Probabilidad', fontsize=12)
-    ax.set_ylim([0, 1])
-    plt.xticks(rotation=45)
-    plt.tight_layout()
-    
-    return fig
+# 2. Gestos con MediaPipe
+mp_hands = mp.solutions.hands
+mp_drawing = mp.solutions.drawing_utils
 
-# Barra lateral
-st.sidebar.title("⚙️ Opciones")
-opcion = st.sidebar.radio(
-    "Selecciona una opción:",
-    ["Subir una imagen 📷", "Usar Cámara Web 🎥"]
+def obtener_distancia(p1, p2):
+    return math.hypot(p2[0] - p1[0], p2[1] - p1[1])
+
+def detectar_gesto(landmarks, image_width, image_height):
+    points = []
+    for lm in landmarks.landmark:
+        points.append([lm.x * image_width, lm.y * image_height])
+    
+    wrist = points[0]
+    thumb_tip = points[4]
+    index_tip = points[8]
+    middle_tip = points[12]
+    ring_tip = points[16]
+    pinky_tip = points[20]
+    thumb_ip = points[3]
+    index_pip = points[6]
+    middle_pip = points[10]
+    ring_pip = points[14]
+    pinky_pip = points[18]
+    
+    # Pulgar arriba
+    thumb_up = thumb_tip[1] < thumb_ip[1] and thumb_tip[1] < index_tip[1] and all(
+        tip[1] > pip[1] for tip, pip in [(index_tip, index_pip), (middle_tip, middle_pip), (ring_tip, ring_pip), (pinky_tip, pinky_pip)]
+    )
+    
+    # Mano abierta (todos los dedos extendidos)
+    open_hand = all(tip[1] < pip[1] for tip, pip in [
+        (thumb_tip, thumb_ip), (index_tip, index_pip), (middle_tip, middle_pip), 
+        (ring_tip, ring_pip), (pinky_tip, pinky_pip)
+    ])
+    
+    # OK (pulgar e índice juntos)
+    ok_dist = obtener_distancia(thumb_tip, index_tip) < 50
+    
+    if open_hand:
+        return "MANO ABIERTA"
+    elif thumb_up:
+        return "PULGAR ARRIBA"
+    elif ok_dist:
+        return "OK"
+    else:
+        return None
+
+# --- Barra lateral ---
+st.sidebar.title("⚙️ Modos")
+modo = st.sidebar.radio(
+    "Selecciona el modo de operación:",
+    ["Modo Filósofo Emocional 😊", "Modo Gestos 👋"]
 )
 
 st.sidebar.markdown("---")
-st.sidebar.info("💡 Tips: Asegúrate de que la imagen tenga un rostro bien iluminado y centrado para mejores resultados!")
+st.sidebar.info("💡 Tips: Ilumina bien tu rostro para detectar emociones. Para gestos, coloca tu mano frente a la cámara.")
 
-# Contenido principal
-if opcion == "Subir una imagen 📷":
-    st.header("📷 Subir una imagen")
+# --- Contenido principal ---
+if modo == "Modo Filósofo Emocional 😊":
+    st.header("🧘 Modo Filósofo Emocional")
     
-    archivo_subido = st.file_uploader("Selecciona una imagen (JPG/PNG)", type=["jpg", "jpeg", "png"])
+    foto = st.camera_input("Captura una foto de tu rostro")
     
-    if archivo_subido is not None:
-        # Cargar la imagen
-        imagen = Image.open(archivo_subido)
-        imagen_array = np.array(imagen)
+    if foto is not None:
+        img_pil = Image.open(foto)
+        img_array = np.array(img_pil)
         
         col1, col2 = st.columns(2)
         
         with col1:
-            st.subheader("Imagen original")
-            st.image(imagen, width=400)
+            st.image(img_pil, caption="Tu foto", use_container_width=True)
         
         with col2:
-            st.subheader("Resultado")
-            
-            # Primero, verificamos si el modelo está cargado
             if modelo is None:
-                st.error("❌ No hay modelo cargado! Asegúrate de que 'mejor_modelo.keras' esté en el directorio.")
+                st.error("❌ No hay modelo")
             else:
-                # Detectar rostro
-                rostro, coordenadas = detectar_rostro(imagen_array)
-                
+                rostro, coords = detectar_rostro(img_array)
                 if rostro is not None:
-                    st.info("✅ Rostro detectado! Analizando...")
+                    emocion, probs = predecir_emocion(rostro)
                     
-                    # Predecir emoción
-                    emocion, probabilidades = predecir_emocion(rostro)
+                    # Mostrar emoción
+                    emoji_map = {'angry': '😠', 'fear': '😨', 'happy': '😊', 'sad': '😢', 'surprise': '😮', 'neutral': '😐', 'disgust': '🤢'}
+                    st.success(f"🎯 Emoción: **{EMOCIONES_ES[emocion]}** {emoji_map.get(emocion, '')}")
                     
-                    if emocion is not None:
-                        # Emoji por emoción
-                        emojis = {
-                            'angry': '😠',
-                            'disgust': '🤢',
-                            'fear': '😨',
-                            'happy': '😊',
-                            'neutral': '😐',
-                            'sad': '😢',
-                            'surprise': '😮'
-                        }
-                        
-                        st.success(f"🎯 Emoción detectada: **{emocion.upper()}** {emojis.get(emocion, '')}")
-                        
-                        # Mostrar gráfico
-                        st.subheader("Probabilidades detalladas")
-                        fig = mostrar_grafico_probabilidades(probabilidades)
-                        st.pyplot(fig)
+                    # Mostrar cita filosófica
+                    if emocion in CITAS_FILOSOFICAS:
+                        cita = CITAS_FILOSOFICAS[emocion][np.random.randint(0, len(CITAS_FILOSOFICAS[emocion]))]
+                        st.markdown(f"""
+                        > *\"{cita['cita']}\"*
+                        > 
+                        > — **{cita['filosofo']}**
+                        """)
                 else:
-                    st.warning("⚠️ No se detectó ningún rostro en la imagen. Intenta con otra foto donde el rostro esté bien iluminado y centrado!")
+                    st.warning("⚠️ No se detectó un rostro")
 
-elif opcion == "Usar Cámara Web 🎥":
-    st.header("🎥 Usar Cámara Web")
+elif modo == "Modo Gestos 👋":
+    st.header("🖐️ Modo Gestos")
     
-    foto_capturada = st.camera_input("Captura una foto con tu cámara")
+    foto = st.camera_input("Captura una foto de tu mano")
     
-    if foto_capturada is not None:
-        # Cargar la imagen
-        imagen = Image.open(foto_capturada)
-        imagen_array = np.array(imagen)
+    if foto is not None:
+        img_pil = Image.open(foto)
+        img_array = np.array(img_pil)
+        h, w, _ = img_array.shape
         
         col1, col2 = st.columns(2)
         
         with col1:
-            st.subheader("Foto capturada")
-            st.image(imagen, width=400)
+            st.image(img_pil, caption="Tu mano", use_container_width=True)
         
         with col2:
-            st.subheader("Resultado")
-            
-            # Primero, verificamos si el modelo está cargado
-            if modelo is None:
-                st.error("❌ No hay modelo cargado! Asegúrate de que 'mejor_modelo.keras' esté en el directorio.")
-            else:
-                # Detectar rostro
-                rostro, coordenadas = detectar_rostro(imagen_array)
+            with mp_hands.Hands(static_image_mode=True, max_num_hands=2, min_detection_confidence=0.5) as hands:
+                img_rgb = cv2.cvtColor(img_array, cv2.COLOR_BGR2RGB)
+                results = hands.process(img_rgb)
                 
-                if rostro is not None:
-                    st.info("✅ Rostro detectado! Analizando...")
-                    
-                    # Predecir emoción
-                    emocion, probabilidades = predecir_emocion(rostro)
-                    
-                    if emocion is not None:
-                        # Emoji por emoción
-                        emojis = {
-                            'angry': '😠',
-                            'disgust': '🤢',
-                            'fear': '😨',
-                            'happy': '😊',
-                            'neutral': '😐',
-                            'sad': '😢',
-                            'surprise': '😮'
-                        }
+                if results.multi_hand_landmarks:
+                    for hand_landmarks in results.multi_hand_landmarks:
+                        gesto = detectar_gesto(hand_landmarks, w, h)
                         
-                        st.success(f"🎯 Emoción detectada: **{emocion.upper()}** {emojis.get(emocion, '')}")
-                        
-                        # Mostrar gráfico
-                        st.subheader("Probabilidades detalladas")
-                        fig = mostrar_grafico_probabilidades(probabilidades)
-                        st.pyplot(fig)
+                        if gesto:
+                            st.success(f"🎯 Gesto detectado: **{gesto}**")
+                            
+                            # Interacción según gesto
+                            if gesto == "MANO ABIERTA":
+                                st.info("👋 ¡Hola! Bienvenido al Filósofo Virtual")
+                            elif gesto == "PULGAR ARRIBA":
+                                st.info("👍 ¡Me alegra que estés aquí!")
+                            elif gesto == "OK":
+                                st.info("👌 ¡Perfecto!")
                 else:
-                    st.warning("⚠️ No se detectó ningún rostro en la foto. Intenta nuevamente con buena iluminación!")
+                    st.warning("⚠️ No se detectó ninguna mano")
 
-# Pie de página
+# --- Pie de página ---
 st.markdown("---")
-st.markdown("Made with ❤️ using Streamlit, TensorFlow and OpenCV")
+st.markdown("Made with ❤️ using Streamlit, TensorFlow and MediaPipe")
