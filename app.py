@@ -10,7 +10,7 @@ import os
 
 # Configuración de la página
 st.set_page_config(
-    page_title="El Filósofo Virtual 🧠",
+    page_title="El Filósofo Virtual",
     page_icon="📜",
     layout="wide"
 )
@@ -24,9 +24,9 @@ st.markdown("---")
 def cargar_modelo():
     # Lista de rutas para buscar el modelo
     rutas_modelo = [
-        'mejor_modelo.keras',
-        './mejor_modelo.keras',
-        '/mount/src/acuriomodelface/mejor_modelo.keras'
+        'mejor_modelo.h5',
+        './mejor_modelo.h5',
+        '/mount/src/acuriomodelface/mejor_modelo.h5'
     ]
     
     for ruta in rutas_modelo:
@@ -176,14 +176,14 @@ def detectar_gesto(landmarks, image_width, image_height):
 st.sidebar.title("⚙️ Modos")
 modo = st.sidebar.radio(
     "Selecciona el modo de operación:",
-    ["Modo Filósofo Emocional 😊", "Modo Gestos 👋"]
+    ["Modo Filósofo Emocional", "Modo Gestos"]
 )
 
 st.sidebar.markdown("---")
 st.sidebar.info("💡 Tips: Ilumina bien tu rostro para detectar emociones. Para gestos, coloca tu mano frente a la cámara.")
 
 # --- Contenido principal ---
-if modo == "Modo Filósofo Emocional 😊":
+if modo == "Modo Filósofo Emocional":
     st.header("🧘 Modo Filósofo Emocional")
     
     foto = st.camera_input("Captura una foto de tu rostro")
@@ -214,13 +214,13 @@ if modo == "Modo Filósofo Emocional 😊":
                         cita = CITAS_FILOSOFICAS[emocion][np.random.randint(0, len(CITAS_FILOSOFICAS[emocion]))]
                         st.markdown(f"""
                         > *\"{cita['cita']}\"*
-                        > 
+                        >
                         > — **{cita['filosofo']}**
                         """)
                 else:
                     st.warning("⚠️ No se detectó un rostro")
 
-elif modo == "Modo Gestos 👋":
+elif modo == "Modo Gestos":
     st.header("🖐️ Modo Gestos")
     
     foto = st.camera_input("Captura una foto de tu mano")
@@ -259,4 +259,4 @@ elif modo == "Modo Gestos 👋":
 
 # --- Pie de página ---
 st.markdown("---")
-st.markdown("Made with ❤️ using Streamlit, TensorFlow and MediaPipe")
+st.markdown("Hecho con ❤️ usando Streamlit, TensorFlow y MediaPipe")

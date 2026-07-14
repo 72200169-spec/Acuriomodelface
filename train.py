@@ -9,7 +9,7 @@ import os
 # Configuración de parámetros
 IMG_SIZE = 48
 BATCH_SIZE = 32
-EPOCHS = 1  # ¡Solo 1 época para entrenamiento ultra rápido!
+EPOCHS = 2  # 2 épocas para generar un modelo con hash diferente
 DATA_DIR_TRAIN = 'train'
 DATA_DIR_TEST = 'test'
 
@@ -81,7 +81,7 @@ early_stopping = EarlyStopping(
 )
 
 model_checkpoint = ModelCheckpoint(
-    'mejor_modelo.keras',
+    'mejor_modelo.h5',
     monitor='val_accuracy',
     save_best_only=True,
     mode='max',
@@ -126,4 +126,4 @@ plt.tight_layout()
 plt.savefig('grafico_entrenamiento.png')
 plt.show()
 
-print("✅ Entrenamiento completado! Modelo guardado como 'mejor_modelo.keras'")
+print("✅ Entrenamiento completado! Modelo guardado como 'mejor_modelo.h5'")

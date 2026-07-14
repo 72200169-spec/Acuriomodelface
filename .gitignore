@@ -12,7 +12,7 @@ __pycache__/
 
 # Archivos generados
 *.log
-*.h5
+# *.h5
 # *.keras  # Comentado para subir el modelo entrenado
 *.png
 grafico_entrenamiento.png
