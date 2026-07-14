@@ -219,12 +219,16 @@ class FilosofVirtualProcessor(VideoProcessorBase):
             min_tracking_confidence=0.5,
             model_complexity=0,
         )
-        self.pose = mp_pose.Pose(
-            static_image_mode=False,
-            min_detection_confidence=0.5,
-            min_tracking_confidence=0.5,
-            model_complexity=0,
-        )
+        self.pose = None
+        try:
+            self.pose = mp_pose.Pose(
+                static_image_mode=False,
+                min_detection_confidence=0.5,
+                min_tracking_confidence=0.5,
+                model_complexity=0,
+            )
+        except Exception:
+            self.pose = None
         self.state = {
             "emocion": None,
             "confianza": 0.0,
@@ -272,9 +276,10 @@ class FilosofVirtualProcessor(VideoProcessorBase):
                     hand_gesture = detected
                     break
 
-        pose_result = self.pose.process(rgb)
-        if pose_result.pose_landmarks:
-            body_gesture = detectar_gesto_pose(pose_result.pose_landmarks.landmark)
+        if self.pose is not None:
+            pose_result = self.pose.process(rgb)
+            if pose_result.pose_landmarks:
+                body_gesture = detectar_gesto_pose(pose_result.pose_landmarks.landmark)
 
         gesture = hand_gesture or body_gesture
         response = construir_respuesta(emotion, gesture)
